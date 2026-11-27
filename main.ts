@@ -2,7 +2,7 @@
 // only): the game is this directory's game/ folder, plain static files
 // a desktop browser loads offline (game/index.html and its ES modules,
 // no library and no network request), and the program hands it in. It
-// clears the output directory first, so a re-run never leaves stale
+// clears the output directory's contents first, so a re-run never leaves stale
 // files behind, copies game/ and screenshots/ from beside this file to
 // /output, and writes /output/dossier.json, the summary the judge
 // reads, with the vendored make.fun library. It refuses to write an
@@ -39,8 +39,13 @@ if (shots.length < 3 || shots.length > 4) {
 // Start from a clean output directory: a re-run into the same folder
 // must write exactly what this commit holds, never a leftover file
 // from an earlier run (a deleted screenshot, a renamed source).
-rmSync(out, { recursive: true, force: true });
+// Clear the directory's CONTENTS, never the directory itself: in the
+// grader /output is a mount point, and removing the mount point itself
+// fails (EBUSY) and aborts the run with exit 1.
 mkdirSync(out, { recursive: true });
+for (const entry of readdirSync(out)) {
+  rmSync(join(out, entry), { recursive: true, force: true });
+}
 cpSync(join(here, 'game'), join(out, 'game'), { recursive: true });
 mkdirSync(join(out, 'screenshots'), { recursive: true });
 cpSync(shotsDir, join(out, 'screenshots'), { recursive: true });
